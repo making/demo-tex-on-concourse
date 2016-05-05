@@ -1,0 +1,15 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: harshjv/texlive-2015 
+inputs:
+  - name: repo
+run:
+  path: bash
+  args:
+  - -c
+  - |
+    mkdir ../build
+    pdflatex -output-directory ../build repo/hello.tex
