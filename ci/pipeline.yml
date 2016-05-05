@@ -10,7 +10,7 @@ jobs:
     plan:
       - get: repo
         trigger: true
-      - task: create-service
+      - task: latex
         config:
           platform: linux
           image_resource:
