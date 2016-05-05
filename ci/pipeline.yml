@@ -1,16 +1,25 @@
 ---
 resources:
-  - name: repo
+  - name: src-repo
     type: git
     source:
       uri: https://github.com/making/demo-tex-on-concourse.git
       branch: master
+  - name: dist-repo
+    type: git
+    source:
+      uri: git@gist.github.com:caa8080fde027510e33df8892a6bc115.git
+      private_key: {{github-private-key}}
+      branch: master
+ 
 jobs:
   - name: build-doc
     plan:
-      - get: repo
+      - get: src-repo
         trigger: true
+      - get: dist-repo
       - task: latex
+        privileged: true
         config:
           platform: linux
           image_resource:
@@ -18,11 +27,40 @@ jobs:
             source:
               repository: harshjv/texlive-2015
           inputs:
-            - name: repo 
+            - name: src-repo 
+          outputs:
+            - name: build
           run:
             path: sh
             args:
             - -c
             - |
-              mkdir ../build
-              pdflatex -output-directory ../build repo/hello.tex
+              pdflatex -output-directory build src-repo/hello.tex
+      - task: upload
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: getourneau/alpine-bash-git
+          inputs:
+            - name: build
+            - name: dist-repo
+          outputs:
+            - name: dist
+          run:
+            path: sh
+            args:
+            - -c
+            - |
+              git clone dist-repo dist
+              cd dist
+              mv -f ../build/*.pdf ./
+              git config --global user.email "makingx@gmail.com"
+              git config --global user.name "Toshiaki Maki"
+
+              git add -A
+              git commit -m "Update by Concourse CI"
+      - put: dist-repo
+        params:
+          repository: dist
