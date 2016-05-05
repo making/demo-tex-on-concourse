@@ -1,0 +1,28 @@
+---
+resources:
+  - name: repo
+    type: git
+    source:
+      uri: https://github.com/making/demo-tex-on-concourse.git
+      branch: master
+jobs:
+  - name: build-doc
+    plan:
+      - get: repo
+        trigger: true
+      - task: create-service
+        config:
+          platform: linux
+          image_resource:
+            type: docker-image
+            source:
+              repository: harshjv/texlive-2015
+          inputs:
+            - name: repo 
+          run:
+            path: sh
+            args:
+            - -c
+            - |
+              mkdir ../build
+              pdflatex -output-directory ../build repo/hello.tex
